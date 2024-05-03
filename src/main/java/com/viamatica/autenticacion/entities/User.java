@@ -25,7 +25,7 @@ public class User extends Base {
     @Pattern(regexp = ".*\\d.*", message = "Debe contener al menos un número")
     @Pattern(regexp = ".*[A-Z].*", message = "Debe contener al menos una letra mayúscula")
     @Size(min = 8, max = 20, message = "Longitud mínima de 8 dígitos y máxima de 20 dígitos")
-    @Column(name = "user_name",length = 50)
+    @Column(name = "user_name",length = 50, unique = true)
     private String userName;
 
 

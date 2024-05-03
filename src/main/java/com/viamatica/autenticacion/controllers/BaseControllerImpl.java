@@ -1,16 +1,14 @@
 package com.viamatica.autenticacion.controllers;
 
+import com.viamatica.autenticacion.dtos.ApiResponse;
 import com.viamatica.autenticacion.entities.Base;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
-import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,10 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import com.viamatica.autenticacion.services.BaseServiceImpl;
-import org.springframework.validation.FieldError;
-import jakarta.validation.ConstraintViolation;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,77 +28,128 @@ public abstract class BaseControllerImpl <E extends Base,S extends BaseServiceIm
     protected S servicio;
 
 
-    @GetMapping("")
-    public ResponseEntity<?> getAll(){
-        try {
-            //List<Persona> personas = servicio.findAll();
-            return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(servicio.findAll());
 
-        }catch(Exception ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error, Por favor intente mas tarde..\" }");
+
+    @GetMapping("")
+    public ResponseEntity<?> getAll() {
+        ApiResponse<List<?>> response = new ApiResponse<>();
+        HttpStatus status = HttpStatus.OK;
+        try {
+            List<?> data = servicio.findAll();
+            response.setData(data);
+            response.setMessage("Operación exitosa");
+        } catch (Exception ex) {
+            status = HttpStatus.NOT_FOUND;
+            response.setMessage("Error, Por favor intente más tarde.");
         }
+        response.setStatusCode(status.value());
+        response.setShowMessage(true);
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(response);
     }
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getOne(@PathVariable Long id){
+    public ResponseEntity<?> getOne(@PathVariable Long id) {
+        ApiResponse<Object> response = new ApiResponse<>();
+        HttpStatus status = HttpStatus.OK;
 
         try {
-            return ResponseEntity.status(HttpStatus.OK).contentType(MediaType.APPLICATION_JSON).body(servicio.findById(id));
-
-        }catch(Exception ex) {
-            System.out.println(ex);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error, Por favor intente mas tarde..\" }");
+            Object data = servicio.findById(id);
+            if (data != null) {
+                response.setData(data);
+                response.setMessage("Operación exitosa");
+            } else {
+                status = HttpStatus.NOT_FOUND;
+                response.setMessage("No se encontró el recurso con el ID proporcionado");
+            }
+        } catch (Exception ex) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+            response.setMessage("Error al procesar la solicitud. Por favor, inténtelo de nuevo más tarde.");
         }
+
+        response.setStatusCode(status.value());
+        response.setShowMessage(true);
+
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(response);
     }
 
 
+
     @PostMapping("")
-    public ResponseEntity<?> save(@Valid @RequestBody E entity, BindingResult bindingResult){
+    public ResponseEntity<?> save(@Valid @RequestBody E entity, BindingResult bindingResult) {
+        ApiResponse<Object> response = new ApiResponse<>();
+        HttpStatus status = HttpStatus.OK;
+
         if (bindingResult.hasErrors()) {
             List<String> errorMessages = bindingResult.getFieldErrors()
                     .stream()
                     .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
                     .collect(Collectors.toList());
 
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessages);
+            status = HttpStatus.BAD_REQUEST;
+            response.setData(errorMessages);
+            response.setMessage("Error de validación");
+        } else {
+            try {
+                E savedEntity = servicio.save(entity);
+                if(savedEntity!=null){
+                    // Aquí puedes asignar la entidad guardada si es necesario
+                    response.setData(savedEntity);
+                    response.setMessage("Entidad guardada correctamente");
+                }
+            } catch (DataIntegrityViolationException ex) {
+                status = HttpStatus.BAD_REQUEST;
+                String errorMessage = ex.getLocalizedMessage();
+                response.setMessage(errorMessage);
+            } catch (Exception ex) {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+                response.setMessage("Error al guardar la entidad. Por favor, inténtelo de nuevo más tarde.");
+            }
+        }
 
-        }
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(servicio.save(entity));
-        }
-        catch (DataIntegrityViolationException ex ){
-            String errorMessage = ex.getLocalizedMessage();
-            //String detailMessage = errorMessage.replaceAll(".*Detail: (.*?)] .*", "$1");
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", errorMessage);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        response.setStatusCode(status.value());
+        response.setShowMessage(true);
 
-        }
-        catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error al guardar, Por favor intente mas tarde..\" }");
-        }
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(response);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody E entity){
 
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(servicio.update(id,entity));
+//    @PutMapping("/{id}")
+//    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody E entity) {
+//        HttpStatus status = HttpStatus.OK;
+//        ApiResponse<Object> response = new ApiResponse<>();
+//
+//        try {
+//            Object updatedEntity = servicio.update(id, entity);
+//            response.setData(updatedEntity);
+//            response.setMessage("Entidad actualizada correctamente");
+//        } catch (Exception ex) {
+//            status = HttpStatus.BAD_REQUEST;
+//            response.setMessage("Error al actualizar la entidad. Por favor, inténtelo de nuevo más tarde.");
+//        }
+//
+//        response.setStatusCode(status.value());
+//        response.setShowMessage(true);
+//        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(response);
+//    }
 
-        }catch(Exception ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error, Por favor intente mas tarde..\" }");
-        }
-    }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id){
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        HttpStatus status = HttpStatus.OK;
+        ApiResponse<Object> response = new ApiResponse<>();
 
         try {
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body(servicio.delete(id));
-
-        }catch(Exception ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error, Por favor intente mas tarde..\" }");
+            servicio.delete(id);
+            response.setMessage("Entidad con identificador "+ id +" eliminado satisfactoriamente");
+        } catch (Exception ex) {
+            status = HttpStatus.BAD_REQUEST;
+            response.setMessage("Error al eliminar la entidad. Por favor, inténtelo de nuevo más tarde.");
         }
+
+        response.setStatusCode(status.value());
+        response.setShowMessage(true);
+        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(response);
     }
+
 }
