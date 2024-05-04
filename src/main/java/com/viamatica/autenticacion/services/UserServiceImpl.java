@@ -21,4 +21,14 @@ public class UserServiceImpl extends BaseServiceImpl<User,Long> implements UserS
     public User findUserByEmail(String userEmail) {
         return userRepository.findUserByUserEmail(userEmail);
     }
+
+    @Override
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username).orElseThrow();
+    }
+
+    @Override
+    public boolean isUserActiveById(Long userId) {
+        return userRepository.existsByIdAndStatusUser(userId, true);
+    }
 }
