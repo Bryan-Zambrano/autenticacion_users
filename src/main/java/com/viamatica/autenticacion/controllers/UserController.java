@@ -1,6 +1,6 @@
 package com.viamatica.autenticacion.controllers;
+import com.viamatica.autenticacion.auth.request.LoginRequest;
 import com.viamatica.autenticacion.dtos.ApiResponse;
-import com.viamatica.autenticacion.dtos.LoginRequest;
 import com.viamatica.autenticacion.entities.User;
 import com.viamatica.autenticacion.services.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class UserController extends BaseControllerImpl<User, UserServiceImpl> {
     @Autowired
     protected UserServiceImpl userService;
 
-    @PostMapping("/login")
+    @PostMapping("/logiNotToken")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         ApiResponse<User> response = new ApiResponse<>();
         HttpStatus status = HttpStatus.OK;

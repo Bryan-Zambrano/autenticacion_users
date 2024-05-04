@@ -14,7 +14,7 @@ public class UserServiceImpl extends BaseServiceImpl<User,Long> implements UserS
 
     @Override
     public User authenticateUser(String userName, String userPassword) {
-        return userRepository.findByUserNameAndUserPassword(userName, userPassword);
+        return userRepository.findByUsernameAndPassword(userName, userPassword);
     }
 
     @Override
