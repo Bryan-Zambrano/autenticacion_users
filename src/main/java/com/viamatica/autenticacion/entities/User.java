@@ -52,8 +52,6 @@ public class User extends Base implements UserDetails {
     @JoinColumn(name = "fk_person_id")
     private Person userPerson;
 
-
-
     @ManyToMany
     @JoinTable(
             name = "rol_users", // Table name

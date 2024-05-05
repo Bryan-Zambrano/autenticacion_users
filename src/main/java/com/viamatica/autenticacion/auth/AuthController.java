@@ -1,20 +1,15 @@
 package com.viamatica.autenticacion.auth;
 
-import com.viamatica.autenticacion.auth.request.AuthResponse;
 import com.viamatica.autenticacion.auth.request.LoginRequest;
 import com.viamatica.autenticacion.auth.request.RegisterRequest;
-import com.viamatica.autenticacion.entities.LogLogin;
-import com.viamatica.autenticacion.entities.User;
-import com.viamatica.autenticacion.repositories.LogLoginRepository;
 import com.viamatica.autenticacion.services.UserServiceImpl;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
 
-import java.sql.Timestamp;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,8 +29,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request)
-    {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 }
